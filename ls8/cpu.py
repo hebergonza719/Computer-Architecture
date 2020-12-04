@@ -24,6 +24,8 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
+
+        print("there", sys.argv[1])
         
         address = 0
 
