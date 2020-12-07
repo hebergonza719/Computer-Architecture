@@ -15,6 +15,12 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.running = True
+        self.branchtable = {}
+        self.branchtable[HLT] = self.HLT
+        self.branchtable[LDI] = self.LDI
+        self.branchtable[PRN] = self.PRN
+        self.branchtable[MUL] = self.MUL
 
 
     def ram_read(self, address):
@@ -74,7 +80,7 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
         elif op == "MUL":
-            self.reg[reg_a] = self.reg[reg_a] * self.reg[reg_b]
+            self.MUL(reg_a, reg_b)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -98,39 +104,60 @@ class CPU:
 
         print()
 
+    def HLT(self, extraA, extraB):
+        self.running = False
+
+    def LDI(self, operand_a, operand_b):
+        register_address = operand_a
+        value_to_save = operand_b
+        self.reg[register_address] = value_to_save
+        self.pc += 2
+
+    def PRN(self, operand_a, extraB):
+        register_address = operand_a
+        value = self.reg[register_address]
+        print(value)
+        self.pc += 1
+
+    def MUL(self, operand_a, operand_b):
+        self.reg[operand_a] = self.reg[operand_a] * self.reg[operand_b]
+        self.pc += 2
+
     def run(self):
         """Run the CPU."""
-        running = True
-
-        while running:
+        while self.running:
             IR = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
             is_alu_operation = ((IR >> 5) & 0b1) == 1
 
-            if IR == HLT:
-                running = False
+            # if IR == HLT:
+            #     # self.running = False
+            #     self.HLT()
 
-            elif IR == LDI:
-                register_address = operand_a
-                value_to_save = operand_b
+            # elif IR == LDI:
+            #     # register_address = operand_a
+            #     # value_to_save = operand_b
 
-                self.reg[register_address] = value_to_save
+            #     # self.reg[register_address] = value_to_save
 
-                self.pc += 2
+            #     # self.pc += 2
+            #     self.LDI(operand_a, operand_b)
 
-            elif IR == PRN:
-                register_address = operand_a
+            # elif IR == PRN:
+            #     # register_address = operand_a
 
-                value = self.reg[register_address]
+            #     # value = self.reg[register_address]
 
-                print(value)
+            #     # print(value)
 
-                self.pc += 1
+            #     # self.pc += 1
+            #     self.PRN(operand_a)
 
-            elif is_alu_operation:
+            if is_alu_operation:
                 if IR == MUL:
                     self.alu("MUL", operand_a, operand_b)
-                    self.pc += 2
+            else:
+                self.branchtable[IR](operand_a, operand_b)
 
             self.pc += 1
