@@ -6,6 +6,8 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -15,12 +17,16 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        # set the stack pointer
+        self.reg[7] = 0xF3
         self.running = True
         self.branchtable = {}
         self.branchtable[HLT] = self.HLT
         self.branchtable[LDI] = self.LDI
         self.branchtable[PRN] = self.PRN
         self.branchtable[MUL] = self.MUL
+        self.branchtable[PUSH] = self.PUSH
+        self.branchtable[POP] = self.POP
 
 
     def ram_read(self, address):
@@ -31,25 +37,6 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-        
-        # address = 0
-
-        # # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
         try:
             if len(sys.argv) < 2:
                 print(f'Error from {sys.argv[0]}: missing filename argument')
@@ -122,6 +109,41 @@ class CPU:
     def MUL(self, operand_a, operand_b):
         self.reg[operand_a] = self.reg[operand_a] * self.reg[operand_b]
         self.pc += 2
+
+    def PUSH(self, operand_a, extraB):
+        # decrement the SP
+        self.reg[7] -= 1
+
+        # copy value from given register into address pointed to by SP
+        register_address = operand_a
+        value = self.reg[register_address]
+
+        # copy into SP address
+        ## self.reg[7] is one value below
+        SP = self.reg[7]
+        self.ram[SP] = value
+
+        self.pc += 1
+    
+    def POP(self, operand_a, extraB):
+        # Copy the value from the address pointed to by `SP` to the given register.
+        ## get the SP
+        SP = self.reg[7]
+
+        ## copy the value from memory at that SP address
+        value = self.ram[SP]
+
+        ## get the target register address
+        register_address = operand_a
+
+        ## Put the value in that register
+        self.reg[register_address] = value
+
+        # Increment `SP`
+        self.reg[7] += 1
+
+        self.pc += 1
+
 
     def run(self):
         """Run the CPU."""
