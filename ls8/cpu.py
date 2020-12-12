@@ -11,6 +11,8 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 ADD = 0b10100000
+CMP = 0b10100111
+JMP = 0b01010100
 
 class CPU:
     """Main CPU class."""
@@ -21,8 +23,9 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         # set the stack pointer
-        self.reg[7] = 0xF3
+        self.reg[7] = 0xF4
         self.running = True
+        self.fl = 0
         self.branchtable = {}
         self.branchtable[HLT] = self.HLT
         self.branchtable[LDI] = self.LDI
@@ -31,6 +34,7 @@ class CPU:
         self.branchtable[POP] = self.POP
         self.branchtable[CALL] = self.CALL
         self.branchtable[RET] = self.RET
+        self.branchtable[JMP] = self.JMP
 
 
     def ram_read(self, address):
@@ -72,6 +76,14 @@ class CPU:
             self.pc += 2
         elif op == "MUL":
             self.reg[reg_a] = self.reg[reg_a] * self.reg[reg_b]
+            self.pc += 2
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = 0b00000001
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 0b00000010
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.fl = 0b00000100
             self.pc += 2
         
         else:
@@ -182,9 +194,17 @@ class CPU:
         ## Step 2, jump back, set the PC to this value
         self.pc = return_address
 
+    def JMP(self, operand_a):
+        register_address = operand_a
+
+        sub_address = self.reg[register_address]
+
+        self.pc = sub_address
+
     def run(self):
         """Run the CPU."""
         while self.running:
+            print(self.pc)
             IR = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
@@ -196,6 +216,8 @@ class CPU:
                     self.alu("MUL", operand_a, operand_b)
                 elif IR == ADD:
                     self.alu("ADD", operand_a, operand_b)
+                elif IR == CMP:
+                    self.alu("CMP", operand_a, operand_b)
             else:
                 self.branchtable[IR](operand_a, operand_b)
 
