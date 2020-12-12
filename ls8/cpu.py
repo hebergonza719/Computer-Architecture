@@ -13,6 +13,8 @@ RET = 0b00010001
 ADD = 0b10100000
 CMP = 0b10100111
 JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -35,6 +37,8 @@ class CPU:
         self.branchtable[CALL] = self.CALL
         self.branchtable[RET] = self.RET
         self.branchtable[JMP] = self.JMP
+        self.branchtable[JEQ] = self.JEQ
+        self.branchtable[JNE] = self.JNE
 
 
     def ram_read(self, address):
@@ -194,17 +198,30 @@ class CPU:
         ## Step 2, jump back, set the PC to this value
         self.pc = return_address
 
-    def JMP(self, operand_a):
+    def JMP(self, operand_a, extraB):
         register_address = operand_a
 
         sub_address = self.reg[register_address]
 
         self.pc = sub_address
 
+    def JEQ(self, operand_a, extraB):
+        if self.fl == 0b00000001:
+            self.JMP(operand_a, extraB)
+        else:
+            self.pc += 2
+
+    def JNE(self, operand_a, extraB):
+        not_equal = (self.fl & 0b01) == 0
+        if not_equal:
+            self.JMP(operand_a, extraB)
+        else:
+            self.pc += 2
+
     def run(self):
         """Run the CPU."""
         while self.running:
-            print(self.pc)
+            # print(self.pc)
             IR = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
