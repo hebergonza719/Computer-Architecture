@@ -15,6 +15,13 @@ CMP = 0b10100111
 JMP = 0b01010100
 JEQ = 0b01010101
 JNE = 0b01010110
+AND = 0b10101000
+OR = 0b10101010
+XOR = 0b10101011
+NOT = 0b01101001
+SHL = 0b10101100
+SHR = 0b10101101
+MOD = 0b10100100
 
 class CPU:
     """Main CPU class."""
@@ -78,9 +85,42 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] = self.reg[reg_a] + self.reg[reg_b]
             self.pc += 2
+        
+        elif op == "AND":
+            self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
+            self.pc += 2
+
+        elif op == "OR":
+            self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
+            self.pc += 2
+
+        elif op == "XOR":
+            self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
+            self.pc += 2
+
         elif op == "MUL":
             self.reg[reg_a] = self.reg[reg_a] * self.reg[reg_b]
             self.pc += 2
+
+        elif op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_a]
+            self.pc += 1
+
+        elif op == "SHL":
+            self.reg[reg_a] = self.reg[reg_a] << reg_b
+            self.pc += 2
+
+        elif op == "SHR":
+            self.reg[reg_a] = self.reg[reg_a] >> reg_b
+            self.pc += 2
+
+        elif op == "MOD":
+            if self.reg[reg_b] == 0:
+                print("Cannot divide by 0")
+                self.HLT(reg_a, reg_b)
+            else:
+                self.reg[reg_a] =  self.reg[reg_a] % self.reg[reg_b]
+        
         elif op == "CMP":
             if self.reg[reg_a] == self.reg[reg_b]:
                 self.fl = 0b00000001
@@ -231,10 +271,33 @@ class CPU:
             if is_alu_operation:
                 if IR == MUL:
                     self.alu("MUL", operand_a, operand_b)
+                
                 elif IR == ADD:
                     self.alu("ADD", operand_a, operand_b)
+                
+                elif IR == OR:
+                    self.alu("OR", operand_a, operand_b)
+
+                elif IR == XOR:
+                    self.alu("XOR", operand_a, operand_b)
+
+                elif IR == NOT:
+                    self.alu("NOT", operand_a, operand_b)
+                
                 elif IR == CMP:
                     self.alu("CMP", operand_a, operand_b)
+                
+                elif IR == AND:
+                    self.alu("AND", operand_a, operand_b)
+                
+                elif IR == SHL:
+                    self.alu("SHL", operand_a, operand_b)
+
+                elif IR == SHR:
+                    self.alu("SHR", operand_a, operand_b)
+
+                elif IR == MOD:
+                    self.alu("MOD", operand_a, operand_b)
             else:
                 self.branchtable[IR](operand_a, operand_b)
 
